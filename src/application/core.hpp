@@ -3,10 +3,8 @@
 
 class core {
     public:
-        core();
         void init();
         void run();
-    
 };
 
 #endif

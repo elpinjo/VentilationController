@@ -1,13 +1,15 @@
+#include <Arduino.h>
 #include "application/core.hpp"
 
-const char* ssid = "MenMs";
-const char* password = "Welkom 1n d1t huis";
+core coreApp = core();
 
 void setup() {
-  
+
+  Serial.begin(115200);
+  coreApp.init();
 }
 
 void loop() {
   // put your main code here, to run repeatedly:
-  
+  coreApp.run();
 }
