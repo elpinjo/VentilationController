@@ -1,7 +1,31 @@
 #include "wlan.hpp"
 #include "../config/config.hpp"
+#include <WiFi.h>
+#include <string.h>
+
+using namespace std;
 
 void wlan::init() {
+    
+    string mySSID = "MenMs";
+    char ssid[mySSID.length()];
+    strcpy(ssid, mySSID.c_str());
+
+    string mySecret = "Welkom 1n d1t huis";
+    char networkSecret[mySecret.length()];
+    strcpy(networkSecret, mySecret.c_str());
+
+    WiFi.mode(WIFI_STA);
+    WiFi.begin(ssid, networkSecret);
+    while (WiFi.status() != WL_CONNECTED) {
+        delay(1000);
+        Serial.println("Connecting to WiFi..");
+    }
+
+    Serial.println("connected");
+
+    // Print ESP32 Local IP Address
+    Serial.println(WiFi.localIP());
     
     char* content;
 

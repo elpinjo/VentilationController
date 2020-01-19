@@ -11,8 +11,8 @@ void config::init() {
 
         this->conf = SPIFFS.open(this->configFile);
         if(!this->conf || this->conf.isDirectory()){
-        Serial.println("- failed to open file for writing");
-        return;
-    }
+            Serial.println("- failed to open the config file");
+            return;
+        }
     }
 }

@@ -1,4 +1,7 @@
 #include "ota.hpp"
+#include <Arduino.h>
+
+#include <ArduinoOTA.h>
 
 void ota::init() {
     ArduinoOTA.onStart([]() {
