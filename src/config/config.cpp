@@ -60,7 +60,15 @@ void config::loadFile() {
         
         int l = conf.readBytesUntil('\n', buffer, sizeof(buffer));
         buffer[l] = 0;
-        Serial.println(buffer);
+        std::string configItem(buffer);
+
+        std::size_t found=configItem.find("=");
+        if (found!=std::string::npos) {
+            std::string property = configItem.substr(0,found);
+            std::string value = configItem.substr(found+1);
+
+            configProperties[property] = value;
+        }
     }
 }
 
