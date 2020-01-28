@@ -7,6 +7,11 @@
 
 #define FORMAT_SPIFFS_IF_FAILED true
 
+struct properties {
+    char* name;
+    char* value;
+};
+
 class config {
 
     public:
