@@ -59,7 +59,7 @@ void config::loadFile() {
     while (conf.available()) {
         
         int l = conf.readBytesUntil('\n', buffer, sizeof(buffer));
-        buffer[l] = 0;
+        buffer[l-1] = 0;
         std::string configItem(buffer);
 
         std::size_t found=configItem.find("=");
@@ -105,6 +105,8 @@ void config::updateFile(){
         conf.println(iter->second.c_str());
         iter++;
     }
+    
+    closeFile();
 }
 
 void config::deleteFile() {
