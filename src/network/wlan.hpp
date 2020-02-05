@@ -3,6 +3,7 @@
 
 #include <WiFi.h>
 #include <WiFiServer.h>
+#include "HTTPRequest.hpp"
 #include "../config/config.hpp"
 
 class wlan {
@@ -12,11 +13,11 @@ class wlan {
         void init();
         void run();
         const char* getSSID();
-        int updateNetwork(const char* SSID, const char* networkSecret);
+        void updateNetwork(const char* SSID, const char* aNetworkSecret);
     private:
         void startPrivateNetwork();
         void joinConfiguredNetwork();
-        void reconfigure();
+        void reconfigure(HTTPRequest aRequest);
         config configuration;
         WiFiServer* server;
         const char* ssid;

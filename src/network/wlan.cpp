@@ -1,6 +1,6 @@
 #include "wlan.hpp"
 #include <Arduino.h>
-#include "HTTPRequest.hpp"
+#include <ArduinoJson.h>
 
 using namespace std;
 
@@ -17,6 +17,8 @@ void wlan::init() {
 
     ssid = configuration.getProperty(SSID_CONFIG_ITEM);
     networkSecret = configuration.getProperty(NETWORK_PASS_CONFIG_ITEM);
+    Serial.println("ssid found: ");
+    Serial.println(ssid);
     if ( ssid != NULL && networkSecret != NULL) {
         joinConfiguredNetwork();
     } else {
@@ -48,6 +50,9 @@ void wlan::run() {
             
             HTTPRequest myRequest = HTTPRequest(rawRequest);
 
+            if (myRequest.getResourcePath().equals("/configNetwork")) {
+                reconfigure(myRequest);
+            }
         }
     }
     
@@ -58,21 +63,49 @@ const char* wlan::getSSID() {
     return ssid;
 }
 
-int wlan::updateNetwork(const char* SSID, const char* networkSecret) {
+void wlan::updateNetwork(const char* SSID, const char* aNetworkSecret) {
 
     configuration.setProperty(SSID_CONFIG_ITEM, SSID);
-    configuration.setProperty(NETWORK_PASS_CONFIG_ITEM, networkSecret);
+    configuration.setProperty(NETWORK_PASS_CONFIG_ITEM, aNetworkSecret);
     configuration.saveConfig();
-    return 0;
+    ssid = SSID;
+    networkSecret = aNetworkSecret;
+
+    joinConfiguredNetwork();
 }
 
 //=======================================================================
 // Private methods
 //=======================================================================
 
-void wlan::reconfigure() {
+void wlan::reconfigure(HTTPRequest aRequest) {
 
-    
+    if (aRequest.getMethod().equalsIgnoreCase("POST")) {
+        StaticJsonDocument<256> jsonDoc;
+
+        DeserializationError error = deserializeJson(jsonDoc, aRequest.getBody());
+
+        // Test if parsing succeeds.
+        if (error) {
+
+            Serial.print(F("deserializeJson() failed: "));
+            Serial.println(error.c_str());
+            return;
+        }
+
+        const char* mySSID = jsonDoc["ssid"];
+        const char* myNetworkSecret = jsonDoc["networkSecret"];
+
+        Serial.print("Updating network to: ");
+        Serial.println(mySSID);
+        updateNetwork(mySSID, myNetworkSecret);
+    } else if (aRequest.getMethod().equalsIgnoreCase("GET")){
+
+        const char* mySSID = aRequest.getParameterValue("ssid").c_str();
+        const char* myNetworkSecret = aRequest.getParameterValue("networkSecret").c_str();
+
+        updateNetwork(mySSID, myNetworkSecret);
+    }
 }
 
 void wlan::startPrivateNetwork() {
@@ -86,23 +119,24 @@ void wlan::startPrivateNetwork() {
 
 void wlan::joinConfiguredNetwork() {
 
-    String mySSID = "MenMs";
-    char ssid[mySSID.length()];
-    strcpy(ssid, mySSID.c_str());
-
-    String mySecret = "Welkom 1n d1t huis";
-    char networkSecret[mySecret.length()];
-    strcpy(networkSecret, mySecret.c_str());
-
     WiFi.mode(WIFI_STA);
     WiFi.begin(ssid, networkSecret);
-    while (WiFi.status() != WL_CONNECTED) {
+
+    int retries = 0;
+    
+    while (WiFi.status() != WL_CONNECTED && retries < 30) {
         delay(1000);
         Serial.println("Connecting to WiFi..");
+        retries++;
     }
 
-    Serial.println("connected");
+    if (WiFi.status() != WL_CONNECTED) {
+        startPrivateNetwork();
+    } else {
 
-    // Print ESP32 Local IP Address
-    Serial.println(WiFi.localIP());
+        Serial.println("connected");
+
+        // Print ESP32 Local IP Address
+        Serial.println(WiFi.localIP());
+    }
 }
