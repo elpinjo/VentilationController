@@ -1,17 +1,96 @@
 #include "wlan.hpp"
-#include "../config/config.hpp"
-#include <WiFi.h>
-#include <string.h>
+#include <Arduino.h>
+#include "HTTPRequest.hpp"
 
 using namespace std;
 
-void wlan::init() {
+wlan::wlan() {
+
+    server = new WiFiServer(80);
     
-    string mySSID = "MenMs";
+}
+
+void wlan::init() {
+
+    configuration = config();
+    configuration.init();
+
+    ssid = configuration.getProperty(SSID_CONFIG_ITEM);
+    networkSecret = configuration.getProperty(NETWORK_PASS_CONFIG_ITEM);
+    if ( ssid != NULL && networkSecret != NULL) {
+        joinConfiguredNetwork();
+    } else {
+        startPrivateNetwork();
+    }
+}
+
+void wlan::run() {
+
+    WiFiClient client = server->available();
+
+    if (client) {
+
+        String rawRequest = "";
+
+        if(client.connected()) {
+
+            String currentLine = "";
+
+            while(client.available()) {
+
+                rawRequest = client.readString();
+            }
+
+            client.stop();
+        }
+
+        if (!rawRequest.equals("")) {
+            
+            HTTPRequest myRequest = HTTPRequest(rawRequest);
+
+        }
+    }
+    
+}
+
+const char* wlan::getSSID() {
+
+    return ssid;
+}
+
+int wlan::updateNetwork(const char* SSID, const char* networkSecret) {
+
+    configuration.setProperty(SSID_CONFIG_ITEM, SSID);
+    configuration.setProperty(NETWORK_PASS_CONFIG_ITEM, networkSecret);
+    configuration.saveConfig();
+    return 0;
+}
+
+//=======================================================================
+// Private methods
+//=======================================================================
+
+void wlan::reconfigure() {
+
+    
+}
+
+void wlan::startPrivateNetwork() {
+
+    WiFi.softAP(AP_SSID, AP_NETWORK_PASS);
+    IPAddress myIP = WiFi.softAPIP();
+    Serial.println(myIP);
+
+    server->begin();
+}
+
+void wlan::joinConfiguredNetwork() {
+
+    String mySSID = "MenMs";
     char ssid[mySSID.length()];
     strcpy(ssid, mySSID.c_str());
 
-    string mySecret = "Welkom 1n d1t huis";
+    String mySecret = "Welkom 1n d1t huis";
     char networkSecret[mySecret.length()];
     strcpy(networkSecret, mySecret.c_str());
 
@@ -26,48 +105,4 @@ void wlan::init() {
 
     // Print ESP32 Local IP Address
     Serial.println(WiFi.localIP());
-    
-    char* content;
-
-    Serial.println(content);
-}
-
-char* wlan::getSSID() {
-
-    return "VENTI";
-}
-
-void wlan::updateNetwork(char* SSID, char* networkSecret) {
-
-}
-
-void readFile(fs::FS &fs, const char * path){
-    Serial.printf("Reading file: %s\r\n", path);
-
-    File file = fs.open(path);
-    if(!file || file.isDirectory()){
-        Serial.println("- failed to open file for reading");
-        return;
-    }
-
-    Serial.println("- read from file:");
-    while(file.available()){
-        Serial.write(file.read());
-    }
-}
-
-void writeFile(fs::FS &fs, const char* path,  const char* content){
-
-    File file = fs.open(path, FILE_WRITE);
-    if(!file || file.isDirectory()){
-        Serial.println("- failed to open file for writing");
-        return;
-    }
-
-    Serial.println("- writing to from file:");
-    if(file.print(content)){
-        Serial.println("- file written");
-    } else {
-        Serial.println("- write failed");
-    }
 }
