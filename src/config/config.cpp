@@ -5,9 +5,24 @@
 // public methods
 //==========================================================================================
 
+config::config() {
+}
+
 void config::init() {
 
-    openFile(FILE_READ);
+    Serial.println("Constructor for COnfig");
+#ifdef ESP32
+        if(!SPIFFS.begin(FORMAT_SPIFFS_IF_FAILED)){
+#elif defined(ESP8266)
+        if(!SPIFFS.begin()){
+            Serial.println("No SPIFFS, begin to format");
+            SPIFFS.format();
+#endif
+            Serial.println("SPIFFS Mount Failed");
+            ESP.restart();
+        }
+
+    openFile("r");
     loadFile();
     closeFile();
 }
@@ -52,7 +67,7 @@ void config::saveConfig() {
 void config::loadFile() {
 
     if (!conf) {
-        openFile(FILE_READ);
+        openFile("r");
     }
 
     char buffer[1024];
@@ -75,16 +90,16 @@ void config::loadFile() {
 void config::openFile(const std::string mode) {
 
     if (!conf) {
-        if(!SPIFFS.begin(FORMAT_SPIFFS_IF_FAILED)){
-
-            Serial.println("SPIFFS Mount Failed");
-            ESP.restart();
-        }
 
         conf = SPIFFS.open(configFile, mode.c_str());
         
         if(!conf || conf.isDirectory()){
             Serial.println("- failed to open the config file");
+            #ifdef ESP8266
+            Serial.println("No config file, begin to format");
+            SPIFFS.format();
+            conf = SPIFFS.open(configFile, "w");
+            #endif
         }
     }
 }
@@ -94,7 +109,7 @@ void config::updateFile(){
     deleteFile();
 
     if (!conf) {
-        openFile(FILE_WRITE);
+        openFile("w");
     }
 
     std::map<std::string, std::string>::iterator iter = configProperties.begin();
