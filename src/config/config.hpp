@@ -18,10 +18,9 @@ struct properties {
 class config {
 
     public:
-        config();
         void init();
-        const char* getProperty(const char* propertyName);
-        void setProperty(const char* propertyName, const char* propertyValue);
+        std::string getProperty(std::string propertyName);
+        void setProperty(std::string propertyName, std::string propertyValue);
         void resetConfig();
         void saveConfig();
     private:
@@ -30,7 +29,7 @@ class config {
         void updateFile();
         void closeFile();
         void deleteFile();
-        const char* configFile = "config.properties";
+        const char* configFile = "/config.properties";
         File conf;
         std::map<std::string, std::string> configProperties;
 };

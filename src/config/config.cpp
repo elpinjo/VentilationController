@@ -5,40 +5,41 @@
 // public methods
 //==========================================================================================
 
-config::config() {
-}
-
 void config::init() {
 
-    Serial.println("Constructor for COnfig");
-#ifdef ESP32
-        if(!SPIFFS.begin(FORMAT_SPIFFS_IF_FAILED)){
-#elif defined(ESP8266)
-        if(!SPIFFS.begin()){
-            Serial.println("No SPIFFS, begin to format");
-            SPIFFS.format();
-#endif
-            Serial.println("SPIFFS Mount Failed");
-            ESP.restart();
-        }
+    if(!SPIFFS.begin(true)){
+        Serial.println("SPIFFS Mount Failed");
+        ESP.restart();
+    }
 
     openFile("r");
     loadFile();
+
+    std::map<std::string, std::string>::iterator iter = configProperties.begin();
+    while(iter != configProperties.end())
+    {
+        Serial.print(iter->first.c_str());
+        Serial.print("---");
+        Serial.println(iter->second.c_str());
+
+        iter++;
+    }
+    
     closeFile();
 }
 
-const char* config::getProperty(const char* propertyName) {
+std::string config::getProperty(std::string propertyName) {
 
     std::map<std::string, std::string>::iterator iter = configProperties.find(propertyName);
     
     if (iter == configProperties.end()) {
-        return NULL;
+        return std::string("");
     } else {
-        return iter->second.c_str();
+        return iter->second;
     }
 }
 
-void config::setProperty(const char* propertyName, const char* propertyValue) {
+void config::setProperty(std::string propertyName, std::string propertyValue) {
 
     configProperties[propertyName] = propertyValue;
 }
@@ -94,9 +95,8 @@ void config::openFile(const std::string mode) {
         conf = SPIFFS.open(configFile, mode.c_str());
         
         if(!conf || conf.isDirectory()){
-            Serial.println("- failed to open the config file");
+            Serial.println("Unable to open the config file");
             #ifdef ESP8266
-            Serial.println("No config file, begin to format");
             SPIFFS.format();
             conf = SPIFFS.open(configFile, "w");
             #endif
@@ -127,6 +127,7 @@ void config::updateFile(){
 void config::deleteFile() {
 
     if (conf) {
+        
         closeFile();
     }
 
@@ -134,7 +135,7 @@ void config::deleteFile() {
 }
 
 void config::closeFile() {
-    
+
     if (conf) {
         conf.close();
     }
