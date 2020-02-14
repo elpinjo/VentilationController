@@ -6,19 +6,17 @@
 #include <Adafruit_Sensor.h>
 #include <Adafruit_BME280.h>
 
- #ifdef ESP32
- #define RELAY0_PIN GPIO_NUM_26
+#ifdef ESP32
 
-// #define I2C_SDA 33
-// #define I2C_SCL 32
+#define RELAY0_PIN GPIO_NUM_26
 
-// TwoWire I2CBME = TwoWire(0);
+#define I2C_SDA 33
+#define I2C_SCL 32
+
+TwoWire I2CBME = TwoWire(0);
 
 #elif defined(ESP8266)
-#define RELAY0_PIN D4
-
-// TwoWire I2CBME = TwoWire();
-
+#define RELAY0_PIN D5
 #endif
 
 #define SEALEVELPRESSURE_HPA (1013.25)
@@ -41,17 +39,17 @@ void core::init() {
 
     // default settings
     // (you can also pass in a Wire library object like &Wire2)
-// #ifdef ESP32
-//     I2CBME.begin(I2C_SDA, I2C_SCL, 100000);
-//     status = bme.begin(0x76, &I2CBME);
-// #elif defined(ESP8266)
-//     status = bme.begin(0x76);
-// #endif
-//    if (!status) {
-//        Serial.println("Could not find a valid BME280 sensor, check wiring!");
-//    }
+#ifdef ESP32
+     I2CBME.begin(I2C_SDA, I2C_SCL, 100000);
+     bool status = bme.begin(0x76, &I2CBME);
+#elif defined(ESP8266)
+     bool status = bme.begin(0x76);
+#endif
+   if (!status) {
+       Serial.println("Could not find a valid BME280 sensor, check wiring!");
+   }
 
-//    wlanManager.setSensor(bme);
+   wlanManager.setSensor(bme);
 }
 
 void core::run() {

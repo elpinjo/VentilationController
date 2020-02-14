@@ -29,7 +29,7 @@ class config {
         void updateFile();
         void closeFile();
         void deleteFile();
-        const char* configFile = "/config.properties";
+        const char* configFile = "/etc/config.properties";
         File conf;
         std::map<std::string, std::string> configProperties;
 };

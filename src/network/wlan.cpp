@@ -5,28 +5,23 @@
 #ifdef ESP32
 #define RELAY_PIN GPIO_NUM_26
 #elif defined(ESP8266)
-#define RELAY_PIN D4
+#define RELAY_PIN D5
 #endif
 
 using namespace std;
 
-wlan::wlan() {
-
-    server = new WiFiServer(80);
-    configuration = config();
-    currentTime = millis();
-    previousTime = 0;
-}
-
 void wlan::init() {
 
+    server = new WiFiServer(80);
+    currentTime = millis();
+    previousTime = 0;
+    configuration = config();
     configuration.init();
 
     ssid = configuration.getProperty(SSID_CONFIG_ITEM);
     networkSecret = configuration.getProperty(NETWORK_PASS_CONFIG_ITEM);
-    Serial.println("ssid found: ");
-    Serial.println(ssid);
-    if ( ssid != NULL && networkSecret != NULL) {
+
+    if ( !ssid.empty() && !networkSecret.empty()) {
         joinConfiguredNetwork();
     } else {
         startPrivateNetwork();
@@ -34,10 +29,6 @@ void wlan::init() {
 }
 
 void wlan::run() {
-
-    // if (!WiFi.isConnected()) {
-    //     init();
-    // }
 
     WiFiClient client = server->available();
 
@@ -48,14 +39,12 @@ void wlan::run() {
         rawRequest = readRequest(client);
 
         //Serial.println("Received request");
-        Serial.println(rawRequest);
+        //Serial.println(rawRequest);
 
         if (!rawRequest.equals("")) {
             
             HTTPRequest myRequest = HTTPRequest(rawRequest);
 
-            //Serial.println("Resource Path: ");
-            Serial.println(myRequest.getResourcePath());
             if (myRequest.getResourcePath().equals("/configNetwork")) {
                 reconfigure(myRequest);
 
@@ -74,6 +63,7 @@ void wlan::run() {
                 client.println("<html><head><title>Environment</title></head><body><center><H1>The ventilator has been stopped</h1></center></body>");
                 client.println();
                 client.stop();
+                Serial.println("close client connection");
             }  else if (myRequest.getResourcePath().equals("/on")) {
                 digitalWrite(RELAY_PIN, HIGH);
                 client.println("HTTP/1.1 200 OK");
@@ -86,13 +76,13 @@ void wlan::run() {
 
                 Serial.println("close client connection");
             } else if (myRequest.getResourcePath().equals("/temperature")) {
-//                   float temperature = bmeSensor.readTemperature();
+                float temperature = bmeSensor.readTemperature();
                 client.println("HTTP/1.1 200 OK");
                 client.println("Content-type:text/html");
                 client.println("Connection: close");
                 client.println();
                 client.print("<html><head><title>Environment</title></head><body><center><H1>The temperature is:</h1><br><H1>");
-//                   client.print(temperature);
+                client.print(temperature);
                 client.println("</h1></center></body>");
                 client.println();
 
@@ -116,18 +106,19 @@ void wlan::run() {
             }
 
         }
+        client.flush();
+        client.stop();
     }
     
 }
 
-const char* wlan::getSSID() {
+std::string wlan::getSSID() {
 
     return ssid;
 }
 
-void wlan::updateNetwork(const char* SSID, const char* aNetworkSecret) {
+void wlan::updateNetwork(std::string SSID, std::string aNetworkSecret) {
 
-    Serial.println(String("Updating network to: " + String(SSID)));
     configuration.setProperty(SSID_CONFIG_ITEM, SSID);
     configuration.setProperty(NETWORK_PASS_CONFIG_ITEM, aNetworkSecret);
     configuration.saveConfig();
@@ -156,16 +147,17 @@ void wlan::reconfigure(HTTPRequest aRequest) {
             return;
         }
 
-        const char* mySSID = jsonDoc["ssid"];
-        const char* myNetworkSecret = jsonDoc["networkSecret"];
+        String mySSID = jsonDoc["ssid"];
 
-        updateNetwork(mySSID, myNetworkSecret);
+        String myNetworkSecret = jsonDoc["networkSecret"];
+
+        updateNetwork(std::string(mySSID.c_str()), std::string(myNetworkSecret.c_str()));
     } else if (aRequest.getMethod().equalsIgnoreCase("GET")){
 
         const char* mySSID = aRequest.getParameterValue("ssid").c_str();
         const char* myNetworkSecret = aRequest.getParameterValue("networkSecret").c_str();
 
-        updateNetwork(mySSID, myNetworkSecret);
+        updateNetwork(std::string(mySSID), std::string(myNetworkSecret));
     }
 }
 
@@ -211,7 +203,7 @@ void wlan::startPrivateNetwork() {
 void wlan::joinConfiguredNetwork() {
 
     WiFi.mode(WIFI_STA);
-    WiFi.begin(ssid, networkSecret);
+    WiFi.begin(ssid.c_str(), networkSecret.c_str());
 
     int retries = 0;
     

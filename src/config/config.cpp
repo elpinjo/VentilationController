@@ -7,23 +7,17 @@
 
 void config::init() {
 
+#ifdef ESP32
     if(!SPIFFS.begin(true)){
+#elif defined(ESP8266)
+    if(!SPIFFS.begin()){
+#endif
         Serial.println("SPIFFS Mount Failed");
         ESP.restart();
     }
 
     openFile("r");
     loadFile();
-
-    std::map<std::string, std::string>::iterator iter = configProperties.begin();
-    while(iter != configProperties.end())
-    {
-        Serial.print(iter->first.c_str());
-        Serial.print("---");
-        Serial.println(iter->second.c_str());
-
-        iter++;
-    }
     
     closeFile();
 }
