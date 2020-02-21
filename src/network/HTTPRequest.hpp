@@ -9,6 +9,7 @@ class HTTPRequest {
 
     public:
         HTTPRequest(String rawRequest);
+        ~HTTPRequest();
         String getMethod();
         String getResourcePath();
         std::list<String> getParameters();

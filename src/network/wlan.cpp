@@ -87,6 +87,18 @@ void wlan::run() {
                 client.println();
 
                 client.stop();
+            } else if (myRequest.getResourcePath().equals("/humidity")) {
+                float humidity = bmeSensor.readHumidity();
+                client.println("HTTP/1.1 200 OK");
+                client.println("Content-type:text/html");
+                client.println("Connection: close");
+                client.println();
+                client.print("<html><head><title>Environment</title></head><body><center><H1>The humidity is:</h1><br><H1>");
+                client.print(humidity);
+                client.println("%</h1></center></body>");
+                client.println();
+
+                client.stop();
             } else if (myRequest.getResourcePath().equals("/reset")) {
                 client.println("HTTP/1.1 200 OK");
                 client.println("Content-type:text/html");
@@ -104,7 +116,6 @@ void wlan::run() {
                 client.println();
                 client.stop();
             }
-
         }
         client.flush();
         client.stop();

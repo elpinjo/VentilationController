@@ -33,6 +33,21 @@ HTTPRequest::HTTPRequest(String rawRequest){
     }
 }
 
+HTTPRequest::~HTTPRequest() {
+
+    for(std::map<String,String>::iterator it = parameters.begin(); it != parameters.end(); ++it) {
+        parameters.erase(it);
+    }
+
+    for(std::map<String,String>::iterator it = headers.begin(); it != headers.end(); ++it) {
+        headers.erase(it);
+    }
+
+    body = "";
+    resourcePath = "";
+    method = "";
+}
+
 String HTTPRequest::getMethod(){
     return method;
 }
