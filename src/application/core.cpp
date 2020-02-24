@@ -10,11 +10,6 @@
 
 #define RELAY0_PIN GPIO_NUM_26
 
-#define I2C_SDA 33
-#define I2C_SCL 32
-
-TwoWire I2CBME = TwoWire(0);
-
 #elif defined(ESP8266)
 #define RELAY0_PIN D5
 #endif
@@ -22,8 +17,6 @@ TwoWire I2CBME = TwoWire(0);
 #define SEALEVELPRESSURE_HPA (1013.25)
 
 Adafruit_BME280 bme;
-
-// #define SEALEVELPRESSURE_HPA (1013.25)
 
 ota otaManager = ota();
 wlan wlanManager = wlan();
@@ -40,8 +33,7 @@ void core::init() {
     // default settings
     // (you can also pass in a Wire library object like &Wire2)
 #ifdef ESP32
-     I2CBME.begin(I2C_SDA, I2C_SCL, 100000);
-     bool status = bme.begin(0x76, &I2CBME);
+     bool status = bme.begin(0x76);
 #elif defined(ESP8266)
      bool status = bme.begin(0x76);
 #endif
