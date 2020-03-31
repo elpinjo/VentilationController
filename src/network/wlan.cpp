@@ -18,6 +18,11 @@ void wlan::init() {
     configuration = config();
     configuration.init();
 
+    setupWiFi();
+}
+
+void wlan::setupWiFi() {
+
     ssid = configuration.getProperty(SSID_CONFIG_ITEM);
     networkSecret = configuration.getProperty(NETWORK_PASS_CONFIG_ITEM);
 
@@ -30,16 +35,21 @@ void wlan::init() {
 
 void wlan::run() {
 
+    // Serial.println("Wlan::Run()");
+    // if (WiFi.status() != WL_CONNECTED)
+    // {
+    //   setupWiFi();
+    // }
+
     WiFiClient client = server->available();
 
     if (client) {
 
         Serial.println("client connected.");
-        
+
         rawRequest = readRequest(client);
 
-        //Serial.println("Received request");
-        //Serial.println(rawRequest);
+        Serial.println(rawRequest);
 
         if (!rawRequest.equals("")) {
             
@@ -97,13 +107,15 @@ void wlan::run() {
                 client.print(humidity);
                 client.println("%</h1></center></body>");
                 client.println();
-
                 client.stop();
+                client.flush();
             } else if (myRequest.getResourcePath().equals("/reset")) {
                 client.println("HTTP/1.1 200 OK");
                 client.println("Content-type:text/html");
                 client.println("Connection: close");
                 client.println();
+                client.stop();
+                client.flush();
                 ESP.restart();
             } else {
                 client.println("HTTP/1.1 200 OK");
@@ -184,7 +196,6 @@ String wlan::readRequest(WiFiClient &client) {
         currentTime = millis();
         if (client.available()) {             // if there's bytes to read from the client,
             c = client.read();             // read a byte, then
-            //Serial.write(c);
             rawRequest += c;
             if (c == '\n') {                    // if the byte is a newline character
                 // if the current line is blank, you got two newline characters in a row.
@@ -196,6 +207,7 @@ String wlan::readRequest(WiFiClient &client) {
                 currentLine += c;      // add it to the end of the currentLine
             }
         }
+        client.flush();
     }
 
     return rawRequest;
@@ -221,6 +233,7 @@ void wlan::joinConfiguredNetwork() {
     Serial.print("Connecting to WiFi..");
     while (WiFi.status() != WL_CONNECTED && retries < 30) {
         delay(1000);
+
         Serial.print(".");
         retries++;
     }

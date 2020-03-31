@@ -20,6 +20,7 @@ class wlan {
         std::string getSSID();
         void updateNetwork(std::string SSID, std::string aNetworkSecret);
         void setSensor(Adafruit_BME280 bme) { bmeSensor = bme;};
+        void setupWiFi();
     private:
         void startPrivateNetwork();
         void joinConfiguredNetwork();
