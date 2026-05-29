@@ -1,6 +1,8 @@
 #ifndef VENTILATION_WLAN_H
 #define VENTILATION_WLAN_H
 
+#include <string>
+
 #ifdef ESP32
 #include <WiFi.h>
 #elif defined(ESP8266)
@@ -11,6 +13,7 @@
 #include <Adafruit_BME280.h>
 #include "HTTPRequest.hpp"
 #include "../config/config.hpp"
+#include "../mqtt/mqtt_handler.hpp"
 
 class wlan {
 
@@ -19,20 +22,23 @@ class wlan {
         void run();
         std::string getSSID();
         void updateNetwork(std::string SSID, std::string aNetworkSecret);
-        void setSensor(Adafruit_BME280 bme) { bmeSensor = bme;};
+        void setSensor(Adafruit_BME280* bme) { bmeSensor = bme;};
+        void setMQTTHandler(mqtt_handler* mqtt) { mqttHandler = mqtt;};
         void setupWiFi();
     private:
         void startPrivateNetwork();
         void joinConfiguredNetwork();
         String readRequest(WiFiClient &client);
         void reconfigure(HTTPRequest aRequest);
+        void configureMQTT(HTTPRequest aRequest);
 
         unsigned long currentTime;
         unsigned long previousTime;
         config configuration;
         WiFiServer* server;
         String rawRequest;
-        Adafruit_BME280 bmeSensor;
+        Adafruit_BME280* bmeSensor;
+        mqtt_handler* mqttHandler;
         std::string ssid;
         std::string networkSecret;
 

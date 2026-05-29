@@ -1,6 +1,7 @@
 #include "core.hpp"
 #include "../network/wlan.hpp"
 #include "../ota/ota.hpp"
+#include "../mqtt/mqtt_handler.hpp"
 
 #include <Wire.h>
 #include <Adafruit_Sensor.h>
@@ -20,6 +21,7 @@ Adafruit_BME280 bme;
 
 ota otaManager = ota();
 wlan wlanManager = wlan();
+mqtt_handler mqttManager = mqtt_handler();
 
 bool relayState = HIGH;
 
@@ -41,11 +43,15 @@ void core::init() {
        Serial.println("Could not find a valid BME280 sensor, check wiring!");
    }
 
-   wlanManager.setSensor(bme);
+   wlanManager.setSensor(&bme);
+   mqttManager.setSensor(&bme);
+   mqttManager.init();
+   wlanManager.setMQTTHandler(&mqttManager);
 }
 
 void core::run() {
 
     wlanManager.run();
     otaManager.run();
+    mqttManager.run();
 }

@@ -86,7 +86,7 @@ void wlan::run() {
 
                 Serial.println("close client connection");
             } else if (myRequest.getResourcePath().equals("/temperature")) {
-                float temperature = bmeSensor.readTemperature();
+                float temperature = bmeSensor->readTemperature();
                 client.println("HTTP/1.1 200 OK");
                 client.println("Content-type:text/html");
                 client.println("Connection: close");
@@ -98,7 +98,7 @@ void wlan::run() {
 
                 client.stop();
             } else if (myRequest.getResourcePath().equals("/humidity")) {
-                float humidity = bmeSensor.readHumidity();
+                float humidity = bmeSensor->readHumidity();
                 client.println("HTTP/1.1 200 OK");
                 client.println("Content-type:text/html");
                 client.println("Connection: close");
@@ -109,6 +109,16 @@ void wlan::run() {
                 client.println();
                 client.stop();
                 client.flush();
+            } else if (myRequest.getResourcePath().equals("/configMQTT")) {
+                configureMQTT(myRequest);
+
+                client.println("HTTP/1.1 200 OK");
+                client.println("Content-type:text/html");
+                client.println("Connection: close");
+                client.println();
+                client.println("<html><head><title>MQTT Configuration</title></head><body><center><H1>MQTT configuration updated</h1></center></body>");
+                client.println();
+                client.stop();
             } else if (myRequest.getResourcePath().equals("/reset")) {
                 client.println("HTTP/1.1 200 OK");
                 client.println("Content-type:text/html");
@@ -158,7 +168,7 @@ void wlan::updateNetwork(std::string SSID, std::string aNetworkSecret) {
 void wlan::reconfigure(HTTPRequest aRequest) {
 
     if (aRequest.getMethod().equalsIgnoreCase("POST")) {
-        StaticJsonDocument<256> jsonDoc;
+        JsonDocument jsonDoc;
 
         DeserializationError error = deserializeJson(jsonDoc, aRequest.getBody());
 
@@ -181,6 +191,57 @@ void wlan::reconfigure(HTTPRequest aRequest) {
         const char* myNetworkSecret = aRequest.getParameterValue("networkSecret").c_str();
 
         updateNetwork(std::string(mySSID), std::string(myNetworkSecret));
+    }
+}
+
+void wlan::configureMQTT(HTTPRequest aRequest) {
+
+    if (mqttHandler == nullptr) {
+        Serial.println("MQTT handler not set");
+        return;
+    }
+
+    if (aRequest.getMethod().equalsIgnoreCase("POST")) {
+        JsonDocument jsonDoc;
+
+        DeserializationError error = deserializeJson(jsonDoc, aRequest.getBody());
+
+        // Test if parsing succeeds.
+        if (error) {
+            Serial.print(F("deserializeJson() failed: "));
+            Serial.println(error.c_str());
+            return;
+        }
+
+        String broker = jsonDoc["broker"];
+        int port = jsonDoc["port"] | 1883;
+        String user = jsonDoc["user"];
+        String password = jsonDoc["password"];
+        String clientId = jsonDoc["clientId"];
+
+        mqttHandler->setMQTTConfig(
+            std::string(broker.c_str()),
+            port,
+            std::string(user.c_str()),
+            std::string(password.c_str()),
+            std::string(clientId.c_str())
+        );
+    } else if (aRequest.getMethod().equalsIgnoreCase("GET")) {
+        const char* broker = aRequest.getParameterValue("broker").c_str();
+        const char* portStr = aRequest.getParameterValue("port").c_str();
+        const char* user = aRequest.getParameterValue("user").c_str();
+        const char* password = aRequest.getParameterValue("password").c_str();
+        const char* clientId = aRequest.getParameterValue("clientId").c_str();
+
+        int port = (portStr && strlen(portStr) > 0) ? atoi(portStr) : 1883;
+
+        mqttHandler->setMQTTConfig(
+            std::string(broker),
+            port,
+            std::string(user),
+            std::string(password),
+            std::string(clientId)
+        );
     }
 }
 
